@@ -1,122 +1,134 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState, useEffect } from "react";
+import "./App.css";
+import Header from "./components/Header";
+import Summary from "./components/Summary";
+import ItemForm from "./components/ItemForm";
+import ItemList from "./components/ItemList";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [items, setItems] = useState(() => {
+    const savedItems = localStorage.getItem("presensi_mahasiswa");
+    if (savedItems) return JSON.parse(savedItems);
+    return [
+      { 
+        id: 1, 
+        nim: "103122400030", 
+        nama: "Khosy AlBuchary",
+        prodi: "Rekayasa Perangkat Lunak",
+        kelas: "SE-0801",
+        status: "Hadir"
+      },
+      { 
+        id: 2, 
+        nim: "10312240006", 
+        nama: "Azka Shulhan A.",
+        prodi: "Rekayasa Perangkat Lunak",
+        kelas: "SE-0801",
+        status: "Izin"
+      },
+    ];
+  });
+
+  const [filter, setFilter] = useState("Semua");
+  const [search, setSearch] = useState("");
+  
+  // State untuk menyimpan ID data yang akan dihapus (untuk Modal Konfirmasi)
+  const [deleteId, setDeleteId] = useState(null);
+
+  useEffect(() => {
+    localStorage.setItem("presensi_mahasiswa", JSON.stringify(items));
+  }, [items]);
+
+  const handleAddItem = (newItem) => {
+    setItems((prevItems) => [...prevItems, newItem]);
+  };
+
+  // Memicu modal konfirmasi keluar
+  const handleRequestDelete = (id) => {
+    setDeleteId(id);
+  };
+
+  // Eksekusi penghapusan jika tombol "Yakin" diklik
+  const handleConfirmDelete = () => {
+    if (deleteId !== null) {
+      setItems((prevItems) => prevItems.filter((item) => item.id !== deleteId));
+      setDeleteId(null);
+    }
+  };
+
+  // Batal hapus
+  const handleCancelDelete = () => {
+    setDeleteId(null);
+  };
+
+  const filteredItems = items.filter((item) => {
+    const matchesStatus = filter === "Semua" || item.status === filter;
+    const matchesSearch = 
+      item.nama.toLowerCase().includes(search.toLowerCase()) ||
+      item.nim.includes(search);
+    return matchesStatus && matchesSearch;
+  });
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="container">
+      <Header />
+      <Summary items={items} />
+      <ItemForm onAddItem={handleAddItem} />
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      <div className="control-section">
+        <div className="search-box">
+          <input 
+            type="text" 
+            placeholder="Cari Nama atau NIM..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        <div className="filter-container-box">
+          <span className="filter-title">Filter Status:</span>
+          <div className="filter-pills-group">
+            {["Semua", "Hadir", "Izin", "Sakit", "Alpha"].map((status) => (
+              <button
+                key={status}
+                type="button"
+                className={`pill-btn ${filter === status ? "active" : ""}`}
+                onClick={() => setFilter(status)}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <ItemList items={filteredItems} onDeleteItem={handleRequestDelete} />
+
+      {/* Modal Konfirmasi Hapus Data */}
+      {deleteId !== null && (
+        <div className="modal-overlay">
+          <div className="modal-box">
+            <h3>Konfirmasi Hapus</h3>
+            <p>Apakah Anda yakin ingin menghapus data presensi ini?</p>
+            <div className="modal-actions">
+              <button 
+                type="button" 
+                className="btn-cancel" 
+                onClick={handleCancelDelete}
+              >
+                Batal
+              </button>
+              <button 
+                type="button" 
+                className="btn-confirm-delete" 
+                onClick={handleConfirmDelete}
+              >
+                Ya, Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
-
-export default App
